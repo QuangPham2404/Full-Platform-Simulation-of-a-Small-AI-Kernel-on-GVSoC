@@ -12,6 +12,9 @@ In current repo, tutorials are availabe at: ``/home/stvn/UREKA/gvsoc/engine/docs
 
 In a directory of a GVSoC, we will have:
 
+...
+
+The makefile:
 
 ```bash
 include ../utils/rt.mk
@@ -46,6 +49,7 @@ run:
 
 - Python: Design the system (your code)
 - C++: Describe hardware (GVSoC plattform provide, you code your self if you create a new component)
+- JSON: configurable files that details the properties of components. Created by the Python script, and editable after compilation for DSE.
 - `make gvsoc`: compile and build the "digital version of the chip" under the form of a executable binary of the simulator specifically for this simulated chip case. Read the `Makefile` for details of what is run during the command, and where the build ouputs will be stored (usually this will be in `build/build` and `build/install`)
 
 **2. BUILD THE SOFTWARE:**

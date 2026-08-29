@@ -45,6 +45,7 @@ class Dog(Animal):
 d = Dog("Rex", "Labrador")
 d.speak()          # "Rex makes a sound"  <- came from Animal's logic
 print(d.breed)     # "Labrador"           <- came from Dog's own logic
+```
 
 ## Success message
 
