@@ -23,12 +23,19 @@ class MyComp(gvsoc.systree.Component):
             "value": value # This value is passed from the constructor
         })
 
-        # Define input port for component by defining a function
-        # the name follows the convention to show that this is an input interface
-        # This function return a SlaveIft (slave interface) object, which recieves request from other components (the masters)
-        # Later, we can use this to connect MyComp to our SoC/ico
-        def i_INPUT(self) -> gvsoc.systree.SlaveItf:
-            return gvsoc.systree.SlaveItf(self, "input", signature="io") # Name of port is "input", and port is i/o port.
+    # Define input port for component by defining a function
+    # the name follows the convention to show that this is an input interface
+    # This function return a SlaveIft (slave interface) object, which recieves request from other components (the masters)
+    # Later, we can use this to connect MyComp to our SoC/ico
+    def i_INPUT(self) -> gvsoc.systree.SlaveItf:
+        return gvsoc.systree.SlaveItf(self, "input", signature="io") # Name of port is "input", and port is i/o port.
+
+    """
+    The procedure of creating a port for a component
+    1. in comp.py, define a function in the comp's class that returns an object
+    2. in system.py, instantiate comp in the components tree and connect it with ico
+    3. describe behaviour of the comp in comp.cpp
+    """
         
 
         
