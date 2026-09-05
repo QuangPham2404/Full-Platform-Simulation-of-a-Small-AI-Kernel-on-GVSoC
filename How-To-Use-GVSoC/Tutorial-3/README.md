@@ -1,6 +1,6 @@
 # Tutorial 3 Notes
 
-## Tutorial 2 summary
+## Tutorial 3 summary
 
 The aim is learn how to add traces to replace ad-hoc print statement, example below in `my_comp1.cpp`:
 
