@@ -2,7 +2,7 @@
 #include <vp/itf/io.hpp>
 #include <vp/itf/wire.hpp>
 #include <cstdint>
-#include <my_results.hpp>
+#include <my_result.hpp>
 
 
 // Create class MyComp for our component, which inherits from vp::Component
@@ -110,6 +110,27 @@ vp::IoReqStatus MyComp::handle_req(vp::Block *__this, vp::IoReq *req)
     // Use tracing instead of printing
      _this->trace.msg(vp::TraceLevel::DEBUG, "Received request at offset 0x%lx, size 0x%lx, is_write %d\n",
         req->get_addr(), req->get_size(), req->get_is_write());
+
+    // Define behaviour for requests landing in the internal register
+    // Check if the request address is within the defined range of the internal reigster
+    if (req->get_addr() >= 8 && req->get_addr() < 12)
+    {
+        // The .update() function of the vp::Register class is used to handle the I/O request, either its read or write
+        _this->my_reg.update(
+            req->get_addr() - 8,
+            req->get_size(),
+            req->get_data(),
+            req->get_is_write()
+        );
+
+        // This is a debug condition to see if the write request is handled correctly.
+        if (req->get_is_write() && _this->my_reg.get() == 0x11227744)
+        {
+            printf("Hit value\n");
+        }
+
+        return vp::IO_REQ_OK;
+    }
 
     // Response behaviour: take the stored value in the component and write that to the memory of the return buffer of the I/O request.
     /*
