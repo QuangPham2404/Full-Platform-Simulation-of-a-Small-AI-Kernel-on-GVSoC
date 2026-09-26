@@ -80,7 +80,7 @@ class Soc(gvsoc.systree.Component):
         loader = utils.loader.loader.ElfLoader(self, "loader", binary=binary)
 
         # Create the GDB server for the SoC
-        gdbserver = gdbserver.gdbserver.Gdbserver(self, "gdbserver")
+        gdbserver.gdbserver.Gdbserver(self, "gdbserver")
 
         # Create the Dot Product Component for the SoC
         dcp = dot_product_component.DotProductComponent(self, "dcp")
