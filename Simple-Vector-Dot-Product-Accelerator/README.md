@@ -255,18 +255,19 @@ Run with `make run`:
 [CPU] Result = 70
 ```
 
-## 5.2. Version 2: IN PROGRESS
+## 5.1. Version 2 (Milestone Project 2) : IN PROGRESS
 
-Updates to be made:
+- Better error handling implementation & add user input functionality
+- Register map using `regmap` & increase input vector size
+- Add custom tracing (normal tracing & VCD tracing)
+- Simulate latency and scheduling behaviour with `ClockEvent`
+- Add different time domain & implement frequency scaling
 
-1. Better error handling implementation
-2. Register map using `regmap`
-3. Add custom tracing
-4. Add clock domains
+These functionality is based on materials up to Tutorial 9, and they make the system sufficiently more realistic and complex
 
-## 5.3. Version 3: IN PLANNING
+## 5.2. Version 3 (Milestone Project 3) : IN PLANNING
 
-Updates to be made:
+- Add multiple cores & accompanying components
 
-1. Add multiple cores
+This step is the first transition of the current SoC into a simple mimic of the PULP architecture with the compute cluster component (multiple cores)
 
