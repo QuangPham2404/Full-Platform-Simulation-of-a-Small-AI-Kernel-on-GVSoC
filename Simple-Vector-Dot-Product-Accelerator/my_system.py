@@ -68,7 +68,7 @@ class Soc(gvsoc.systree.Component):
         super().__init__(parent, name)
 
         # Create the CPU component
-        cpu = cpu.iss.riscv.Riscv(self, "cpu", isa="rv64imafdc", binaries=[binary])
+        host = cpu.iss.riscv.Riscv(self, "cpu", isa="rv64imafdc", binaries=[binary])
 
         # Create the interconnect for the SoC 
         ico = interco.router.Router(self, "ico")
@@ -86,9 +86,9 @@ class Soc(gvsoc.systree.Component):
         dcp = dot_product_component.DotProductComponent(self, "dcp")
 
         # Connect CPU OUTPUT to interconnect INPUT
-        cpu.o_DATA(ico.i_INPUT())
-        cpu.o_FETCH(ico.i_INPUT())
-        cpu.o_DATA_DEBUG(ico.i_INPUT())
+        host.o_DATA(ico.i_INPUT())
+        host.o_FETCH(ico.i_INPUT())
+        host.o_DATA_DEBUG(ico.i_INPUT())
 
         # Connect interconnect OUTPUT to memory INPUT
         ico.o_MAP(mem.i_INPUT(), 'mem', base=0x00000000, rm_base=True, size=0x00100000)
@@ -96,8 +96,8 @@ class Soc(gvsoc.systree.Component):
         # Connect loader OUTPUT to ico INPUT to send the binary to memory
         # AND: Connect loader OUTPUT to CPU ENTRY and START INPUTS to specify (1) the entry point of the binary and (2) the start signal
         loader.o_OUT(ico.i_INPUT())
-        loader.o_ENTRY(cpu.i_ENTRY())
-        loader.o_START(cpu.i_FETCHEN())
+        loader.o_ENTRY(host.i_ENTRY())
+        loader.o_START(host.i_FETCHEN())
 
         # Connect ICO OUTPUT to DCP INPUT to send operands from CPU to DCP using register mapping
         ico.o_MAP(
