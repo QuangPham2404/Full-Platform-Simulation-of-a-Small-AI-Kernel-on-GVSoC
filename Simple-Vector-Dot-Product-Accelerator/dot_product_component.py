@@ -2,8 +2,8 @@ import gvsoc.systree
 
 # Create the class for our components, following the same syntax as what we did for components in Tutorial 0.
 # The `parent`, and `name` option is a must. The rest can add based on our design.
-class MyComp(gvsoc.systree.Component):
-    def __init__(self, parent: gvsoc.systree.Component, name: str, value: int):
+class DotProductComponen(gvsoc.systree.Component):
+    def __init__(self, parent: gvsoc.systree.Component, name: str):
         super().__init__(parent, name)
 
         # Add my_comp.cpp file source for this component.

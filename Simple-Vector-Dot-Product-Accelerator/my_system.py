@@ -24,7 +24,7 @@ import interco.router
 import cpu.iss.riscv
 import utils.loader.loader
 import gdbserver.gdbserver
-import dot_product_component.py
+import dot_product_component
 
 '''
 This project's component tree is as follows:
@@ -68,7 +68,7 @@ class Soc(gvsoc.systree.Component):
         super().__init__(parent, name)
 
         # Create the CPU component
-        cpu = cpu.iss.riscv.Riscv(self, "cpu", isa="rv64imafdc", binary=[binary])
+        cpu = cpu.iss.riscv.Riscv(self, "cpu", isa="rv64imafdc", binaries=[binary])
 
         # Create the interconnect for the SoC 
         ico = interco.router.Router(self, "ico")
@@ -99,6 +99,12 @@ class Soc(gvsoc.systree.Component):
         loader.o_ENTRY(cpu.i_ENTRY())
         loader.o_START(cpu.i_FETCHEN())
 
-        # Connect ICO OUTPUT to DCP INPUT to send operands from CPU to DCP
-        ico.o_MAP(dcp.i_INPUT(), "dcp")
+        # Connect ICO OUTPUT to DCP INPUT to send operands from CPU to DCP using register mapping
+        ico.o_MAP(
+            dcp.i_INPUT(),
+            "dcp",
+            base=0x20000000,
+            size=0x00001000,
+            rm_base=True
+        )
 
