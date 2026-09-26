@@ -20,7 +20,7 @@
 
 ### 3. Register mapping for components (Tutorial 5)
 
-## Other notes
+## Implementation notes
 
 ### 1. Software side vs Hardware side
 

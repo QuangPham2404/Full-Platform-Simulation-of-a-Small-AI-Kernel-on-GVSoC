@@ -242,3 +242,31 @@ CPU stores and reports result
 ```
 
 Completing this milestone demonstrates that the foundational GVSoC concepts learned so far can be integrated into a small but meaningful simulated accelerator system.
+
+## 5.1. Version 1: SUCCESS
+
+Run with `make run`:
+
+```txt
+[DPC] Values received!
+[DPC] Computation success.
+[DPC] Result sent back to CPU.
+[CPU] Dot-product completed successfully.
+[CPU] Result = 70
+```
+
+## 5.2. Version 2: IN PROGRESS
+
+Updates to be made:
+
+1. Better error handling implementation
+2. Register map using `regmap`
+3. Add custom tracing
+4. Add clock domains
+
+## 5.3. Version 3: IN PLANNING
+
+Updates to be made:
+
+1. Add multiple cores
+
