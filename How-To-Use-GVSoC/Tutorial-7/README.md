@@ -11,7 +11,7 @@ We see this a lot in our HPC applications.
 
 ## Technical Notes
 
-1. How to do syncronous response
+1. **How to do syncronous response**
 
 We can simply add a latency before the respond command.
 
@@ -19,13 +19,17 @@ We can simply add a latency before the respond command.
 req->inc_latency(1000); // Latency of 1000 cycles
 ```
 
-2. How to do asyncronous response
+2. **How to do asyncronous response**
 
 To do this, we first need to use a `vp::ClockEvent` object and a corresponding `handle_event()` function, creating a 2-step response structure like in Tutorial 6. To handle pending request correctly, we also need `vp::ioReq` object that allows us to store the pending request and return a proper pending message `return vp::IO_REQ_PENDING;`. This is crucial because asyncronous repsonse must be handled correctly or else the order of response will be messed up.
 
 In this tutorial we add another register-mapping to separate syncronous and asyncronous response - 0x00 and 0x04 respectively (global address).
 
 Differentiate: async wait time is DIFFERENT from sync latency.
+
+3. **Note about initializing `ClockEvent` objects**
+
+After we create an `ClockEvent` `event` object, we need to add it into the intitializer. This is the same as the tracing event ni previous tutorials. Think of them as requirements needed to initialize the component.
 
 ## Success Message
 
