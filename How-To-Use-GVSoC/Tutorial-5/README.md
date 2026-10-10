@@ -56,6 +56,8 @@ Register mapping is like a phone book for the cpu to know what to do. Internal r
 1. Since internal registers are basically a part of a component instead of a stand-alone component in the wider system with its on ports, interacting with cpu, etc (intuitively it is controlled "internally" by the component), it is not needed to be defined as a sub-component in my_system.py.
 2. Also, an interal register only needs to be initializes in .cpp files, unlike ports and traces, since again, it is an internal component without cross-component boundary. So, no need to define it in the .py script. (Intuition: .py is to describe the "shell", not the internal components.)
 
+From now on, whenever we do component mapping, it is easier to visualize that we are pointing the addresses to "internal regsiter," and note that those internal register are NOT only for storage, they respond accrordingly based on their function.
+
 ### This project allow us to understand deeper how gvsoc works:
 
 - my_system.py describes the system, target, and its component tree. It also defines the interconnection between the components via the interconnects or direct.
@@ -68,6 +70,10 @@ Register mapping is like a phone book for the cpu to know what to do. Internal r
 The manual way to register-map the internal components of a componet is via its request handling function, after we have define and "register" those sub-components in the component class's function.
 
 ### 3. Adding register map automatically using regmap
+
+1. Edit the makefile by adding the `regmap` command to generate header files for the registers.
+2. Write `regmap.md` defining the internal registers.
+
 
 ## Success messages
 
