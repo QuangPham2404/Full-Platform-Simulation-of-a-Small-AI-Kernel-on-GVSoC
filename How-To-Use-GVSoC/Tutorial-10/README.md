@@ -46,7 +46,7 @@ Note the jump of cycle numbering from `1257` to `1358`. That's the latency when 
 
 The **router trace**, `make run runner_args="--trace=insn --trace=ico --trace-level=trace`, shows the bandwidth reservation. From the run:
 
-```
+```txt
 cycle 12077: read request, size 0x4
 cycle 12077: bandwidth: 1, next_burst: 12294
 cycle 12078: read request, size 0x4
