@@ -3,6 +3,11 @@
 #include <cstdint>
 #include <cstdio>
 
+// Include the regmap headers
+#include "headers/dpc_regfields.h"
+#include "headers/dpc_gvsoc.h"
+
+
 
 // Create class dcp for our component, which inherits from vp::Component
 class dcp : public vp::Component
@@ -21,6 +26,12 @@ private:
 
     // Callback for I/O requests
     static vp::IoReqStatus handle_req(vp::Block *__this, vp::IoReq *req);
+
+    // Add a trace object
+    vp::Trace trace;
+
+    // Add a regmap object
+    vp_regmap_regmap regmap;
 };
 
 
@@ -33,7 +44,7 @@ extern "C" vp::Component *gv_new(vp::ComponentConf &config)
 
 // Constructor
 dcp::dcp(vp::ComponentConf &config)
-    : vp::Component(config)
+    : vp::Component(config), regmap(*this, "regmap")
 {
     // Define callback function for input port
     this->input_itf.set_req_meth(&dcp::handle_req);
@@ -55,6 +66,12 @@ dcp::dcp(vp::ComponentConf &config)
 
     // Register input port
     this->new_slave_port("input", &(this->input_itf));
+
+    // Inititate trace
+    this->traces.new_trace("trace", &this->trace);
+
+    // Initiate regmap
+    this->regmap.build(this, &this->trace);
 }
 
 
