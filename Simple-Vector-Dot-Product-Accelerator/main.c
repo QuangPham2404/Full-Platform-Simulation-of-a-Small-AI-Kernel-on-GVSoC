@@ -11,8 +11,8 @@
 #define DPC_STATUS  (DPC_BASE_ADDR + 0x84U)
 #define DPC_RESULT  (DPC_BASE_ADDR + 0x88U)
 
-#define REG_WRITE(addr, value) (*(volatile uint32_t *)(addr) = (value))
-#define REG_READ(addr)         (*(volatile uint32_t *)(addr))
+#define REG_WRITE(addr, value) (*(volatile uint32_t *)(uintptr_t)(addr) = (value))
+#define REG_READ(addr)         (*(volatile uint32_t *)(uintptr_t)(addr))
 
 int main(void)
 {
