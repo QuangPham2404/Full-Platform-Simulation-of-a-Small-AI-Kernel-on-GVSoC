@@ -255,19 +255,23 @@ Run with `make run`:
 [CPU] Result = 70
 ```
 
-## 5.1. Version 2 (Milestone Project 2) : IN PROGRESS
+## 5.1. Version 2 (Milestone Project 2) : SUCCESS
 
-- Better error handling implementation & add user input functionality
-- Register map using `regmap` & increase input vector size
-- Add custom tracing (normal tracing & VCD tracing)
-- Simulate latency and scheduling behaviour with `ClockEvent`
-- Add different time domain & implement frequency scaling
+The following updates are made:
 
-These functionality is based on materials up to Tutorial 9, and they make the system sufficiently more realistic and complex
+- Register mapping implemented with `regmap`
+- Increase number of vector elements from 4 to 16 elements per vector
+- Add custom tracing: execution state and output numerical accumulation tracing
+- Add latency: computation latency (50s) and communication-ico latency (5s)
+- Add clk zones: cpu (100 MHz) and Dot Product Component (DPC - 50 MHz)
 
 ## 5.2. Version 3 (Milestone Project 3) : IN PLANNING
 
+- Sequential MAC engine, update timing and latency accordingly (with dependencies)
+- Add custom RISC-V instruction
 - Add multiple cores & accompanying components
+- Power modeling
+- 
 
 This step is the first transition of the current SoC into a simple mimic of the PULP architecture with the compute cluster component (multiple cores)
 
