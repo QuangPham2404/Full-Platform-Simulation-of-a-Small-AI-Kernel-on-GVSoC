@@ -2,163 +2,95 @@
 #include <vp/itf/io.hpp>
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 
+#include "headers/dpc_regfields.h"
+#include "headers/dpc_gvsoc.h"
 
-// Create class dcp for our component, which inherits from vp::Component
+// Dot Product Component: register storage and address decoding are generated
+// from regmap.md. The CONTROL callback implements the accelerator behavior.
 class dcp : public vp::Component
 {
 public:
     dcp(vp::ComponentConf &config);
 
 private:
-    // Input I/O port
     vp::IoSlave input_itf;
+    vp::Trace trace;
+    vp_regmap_regmap regmap;
 
-    // Internal registers
-    uint32_t a0, a1, a2, a3;
-    uint32_t b0, b1, b2, b3;
-    uint32_t result, control, status;
-
-    // Callback for I/O requests
     static vp::IoReqStatus handle_req(vp::Block *__this, vp::IoReq *req);
+    void handle_control_access(uint64_t reg_offset, int size,
+                               uint8_t *value, bool is_write);
 };
 
-
-// Instantiation function
 extern "C" vp::Component *gv_new(vp::ComponentConf &config)
 {
     return new dcp(config);
 }
 
-
-// Constructor
 dcp::dcp(vp::ComponentConf &config)
     : vp::Component(config)
 {
-    // Define callback function for input port
     this->input_itf.set_req_meth(&dcp::handle_req);
+    this->new_slave_port("input", &this->input_itf);
 
-    // Initial values
-    this->a0 = 0;
-    this->a1 = 0;
-    this->a2 = 0;
-    this->a3 = 0;
+    this->traces.new_trace("trace", &this->trace);
+    this->regmap.build(this, &this->trace);
 
-    this->b0 = 0;
-    this->b1 = 0;
-    this->b2 = 0;
-    this->b3 = 0;
-
-    this->control = 0;
-    this->status = 0;
-    this->result = 0;
-
-    // Register input port
-    this->new_slave_port("input", &(this->input_itf));
+    // Generic accesses are handled by the generated register map.
+    // CONTROL alone needs a side effect when software writes a start command.
+    this->regmap.control.register_callback(
+        std::bind(&dcp::handle_control_access, this,
+                  std::placeholders::_1, std::placeholders::_2,
+                  std::placeholders::_3, std::placeholders::_4),
+        true);
 }
 
-
-// Callback function
 vp::IoReqStatus dcp::handle_req(vp::Block *__this, vp::IoReq *req)
 {
-    // Get pointer to current DPC instance
-    dcp *_this = (dcp *)__this;
+    dcp *_this = static_cast<dcp *>(__this);
+    const uint64_t offset = req->get_addr();
 
+    // V2.1 retains V1's 32-bit aligned register accesses and read interface.
+    if (req->get_size() != 4 || (offset & 3) != 0 || offset > 0x28)
+        return vp::IO_REQ_INVALID;
 
-    // -------------------------
-    // WRITE REQUEST
-    // -------------------------
-    if (req->get_is_write())
+    if (!req->get_is_write() && offset != 0x24 && offset != 0x28)
+        return vp::IO_REQ_INVALID;
+
+    if (req->get_is_write() && (offset == 0x24 || offset == 0x28))
+        return vp::IO_REQ_INVALID;
+
+    _this->regmap.access(offset, req->get_size(), req->get_data(),
+                         req->get_is_write());
+
+    if (!req->get_is_write() && offset == 0x28)
+        printf("[DPC] Result sent back to CPU.\n");
+
+    return vp::IO_REQ_OK;
+}
+
+void dcp::handle_control_access(uint64_t reg_offset, int size,
+                                uint8_t *value, bool is_write)
+{
+    // The custom access callback must still perform the register update.
+    this->regmap.control.update(reg_offset, size, value, is_write);
+
+    // Preserve V1 semantics: the whole 32-bit register must equal 1.
+    if (is_write && this->regmap.control.get() == 1)
     {
-        uint32_t value = *(uint32_t *)req->get_data();
+        printf("[DPC] Values received!\n");
 
-        if (req->get_addr() == 0x00)
-        {
-            _this->a0 = value;
-        }
-        else if (req->get_addr() == 0x04)
-        {
-            _this->a1 = value;
-        }
-        else if (req->get_addr() == 0x08)
-        {
-            _this->a2 = value;
-        }
-        else if (req->get_addr() == 0x0C)
-        {
-            _this->a3 = value;
-        }
-        else if (req->get_addr() == 0x10)
-        {
-            _this->b0 = value;
-        }
-        else if (req->get_addr() == 0x14)
-        {
-            _this->b1 = value;
-        }
-        else if (req->get_addr() == 0x18)
-        {
-            _this->b2 = value;
-        }
-        else if (req->get_addr() == 0x1C)
-        {
-            _this->b3 = value;
-        }
-        else if (req->get_addr() == 0x20)
-        {
-            _this->control = value;
+        uint32_t result =
+              this->regmap.a0.get() * this->regmap.b0.get()
+            + this->regmap.a1.get() * this->regmap.b1.get()
+            + this->regmap.a2.get() * this->regmap.b2.get()
+            + this->regmap.a3.get() * this->regmap.b3.get();
 
-            // Start computation when CONTROL = 1
-            if (_this->control == 1)
-            {
-                printf("[DPC] Values received!\n");
+        this->regmap.result.set(result);
+        this->regmap.status.set(1);
 
-                _this->result =
-                      _this->a0 * _this->b0
-                    + _this->a1 * _this->b1
-                    + _this->a2 * _this->b2
-                    + _this->a3 * _this->b3;
-
-                // Computation completed
-                _this->status = 1;
-
-                printf("[DPC] Computation success.\n");
-            }
-        }
-        else
-        {
-            return vp::IO_REQ_INVALID;
-        }
-
-        return vp::IO_REQ_OK;
-    }
-
-
-    // -------------------------
-    // READ REQUEST
-    // -------------------------
-    else
-    {
-        // STATUS register
-        if (req->get_addr() == 0x24)
-        {
-            *(uint32_t *)req->get_data() = _this->status;
-        }
-
-        // RESULT register
-        else if (req->get_addr() == 0x28)
-        {
-            *(uint32_t *)req->get_data() = _this->result;
-
-            printf("[DPC] Result sent back to CPU.\n");
-        }
-
-        // Unsupported address
-        else
-        {
-            return vp::IO_REQ_INVALID;
-        }
-
-        return vp::IO_REQ_OK;
+        printf("[DPC] Computation success.\n");
     }
 }
