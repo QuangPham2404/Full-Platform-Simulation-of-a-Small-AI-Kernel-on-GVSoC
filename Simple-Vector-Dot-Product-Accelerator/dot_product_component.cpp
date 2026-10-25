@@ -52,20 +52,20 @@ vp::IoReqStatus dcp::handle_req(vp::Block *__this, vp::IoReq *req)
     dcp *_this = static_cast<dcp *>(__this);
     const uint64_t offset = req->get_addr();
 
-    // V2.1 retains V1's 32-bit aligned register accesses and read interface.
-    if (req->get_size() != 4 || (offset & 3) != 0 || offset > 0x28)
+    // V2.2 uses 16 operands per vector, with 32-bit aligned accesses.
+    if (req->get_size() != 4 || (offset & 3) != 0 || offset > 0x88)
         return vp::IO_REQ_INVALID;
 
-    if (!req->get_is_write() && offset != 0x24 && offset != 0x28)
+    if (!req->get_is_write() && offset != 0x84 && offset != 0x88)
         return vp::IO_REQ_INVALID;
 
-    if (req->get_is_write() && (offset == 0x24 || offset == 0x28))
+    if (req->get_is_write() && (offset == 0x84 || offset == 0x88))
         return vp::IO_REQ_INVALID;
 
     _this->regmap.access(offset, req->get_size(), req->get_data(),
                          req->get_is_write());
 
-    if (!req->get_is_write() && offset == 0x28)
+    if (!req->get_is_write() && offset == 0x88)
         printf("[DPC] Result sent back to CPU.\n");
 
     return vp::IO_REQ_OK;
@@ -82,11 +82,47 @@ void dcp::handle_control_access(uint64_t reg_offset, int size,
     {
         printf("[DPC] Values received!\n");
 
-        uint32_t result =
-              this->regmap.a0.get() * this->regmap.b0.get()
-            + this->regmap.a1.get() * this->regmap.b1.get()
-            + this->regmap.a2.get() * this->regmap.b2.get()
-            + this->regmap.a3.get() * this->regmap.b3.get();
+        // Gather generated named registers into local arrays for a simple MAC loop.
+        const uint32_t a[16] = {
+            this->regmap.a0.get(),
+            this->regmap.a1.get(),
+            this->regmap.a2.get(),
+            this->regmap.a3.get(),
+            this->regmap.a4.get(),
+            this->regmap.a5.get(),
+            this->regmap.a6.get(),
+            this->regmap.a7.get(),
+            this->regmap.a8.get(),
+            this->regmap.a9.get(),
+            this->regmap.a10.get(),
+            this->regmap.a11.get(),
+            this->regmap.a12.get(),
+            this->regmap.a13.get(),
+            this->regmap.a14.get(),
+            this->regmap.a15.get()
+        };
+        const uint32_t b[16] = {
+            this->regmap.b0.get(),
+            this->regmap.b1.get(),
+            this->regmap.b2.get(),
+            this->regmap.b3.get(),
+            this->regmap.b4.get(),
+            this->regmap.b5.get(),
+            this->regmap.b6.get(),
+            this->regmap.b7.get(),
+            this->regmap.b8.get(),
+            this->regmap.b9.get(),
+            this->regmap.b10.get(),
+            this->regmap.b11.get(),
+            this->regmap.b12.get(),
+            this->regmap.b13.get(),
+            this->regmap.b14.get(),
+            this->regmap.b15.get()
+        };
+
+        uint32_t result = 0;
+        for (int i = 0; i < 16; i++)
+            result += a[i] * b[i];
 
         this->regmap.result.set(result);
         this->regmap.status.set(1);
