@@ -75,8 +75,14 @@ vp::IoReqStatus dcp::handle_req(vp::Block *__this, vp::IoReq *req)
     _this->regmap.access(offset, req->get_size(), req->get_data(),
                          req->get_is_write());
 
-    // Synchronous 5-cycle MMIO cost; does not delay internal computation.
+    // Latency is consumed by the requester: 5 CPU cycles at 100 MHz.
+    // Register updates happen now; this does not delay the compute event.
+    const uint64_t latency_before = req->get_latency();
     req->inc_latency(5);
+    _this->trace.msg(vp::TraceLevel::DEBUG,
+                     "MMIO latency: offset=0x%llx, added=%llu requester cycles\n",
+                     static_cast<unsigned long long>(offset),
+                     static_cast<unsigned long long>(req->get_latency() - latency_before));
 
     if (!req->get_is_write() && offset == 0x88)
         printf("[DPC] Result sent back to CPU.\n");
