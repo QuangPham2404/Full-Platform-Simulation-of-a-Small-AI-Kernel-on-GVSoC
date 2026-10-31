@@ -275,4 +275,6 @@ MMIO requests retain their five requester-cycle latency.
 
 See [V3_IMPLEMENTATION.md](V3_IMPLEMENTATION.md) for build commands, the
 required GVSoC ISS patch, timing semantics, and validation evidence.
-Power modeling remains deferred to V3.3. Multicore support is outside this change.
+V3.3 now adds illustrative CPU/DPC power models and native power traces.
+See [V3_POWER.md](V3_POWER.md) for parameters, reproduction commands, validation
+and reporting limitations. Multicore support remains outside this change.

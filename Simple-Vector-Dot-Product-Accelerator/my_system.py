@@ -9,6 +9,7 @@ import memory.memory
 import utils.loader.loader
 import gdbserver.gdbserver
 import dot_product_component
+import power_models
 
 GAPY_TARGET = True
 
@@ -59,7 +60,8 @@ class MacRiscv(cpu.iss.riscv.RiscvCommon):
             parent, name, isa=isa, misa=isa.misa, binaries=binaries,
             riscv_exceptions=True, riscv_dbg_unit=True, mmu=True, pmp=True,
             internal_atomics=True, supervisor=True, user=True,
-            timed=True, prefetcher_size=64, scoreboard=True)
+            timed=True, prefetcher_size=64, scoreboard=True,
+            power_models=power_models.cpu_model())
         self.add_c_flags(["-DCONFIG_ISS_CORE=riscv"])
 
 

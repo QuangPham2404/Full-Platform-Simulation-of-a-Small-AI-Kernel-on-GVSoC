@@ -20,6 +20,9 @@ private:
     vp_regmap_regmap regmap;
     vp::Signal<uint32_t> state_signal; // 0=IDLE, 1=BUSY, 2=DONE
     vp::Signal<uint32_t> accumulator_signal;
+    vp::PowerSource background_power;
+    vp::PowerSource mac_power;
+    void start() override;
     vp::ClockEvent compute_event;
     uint32_t a[16], b[16]; // Snapshot: MMIO writes affect only the next job.
     uint32_t accumulator = 0;
@@ -52,6 +55,11 @@ dcp::dcp(vp::ComponentConf &config)
     this->state_signal.set(0);
     this->accumulator_signal.set(0);
 
+    this->power.new_power_source("background", &this->background_power,
+        this->get_js_config()->get("background_power"));
+    this->power.new_power_source("mac", &this->mac_power,
+        this->get_js_config()->get("mac_power"));
+
     // Generic accesses are handled by the generated register map.
     // CONTROL alone needs a side effect when software writes a start command.
     this->regmap.control.register_callback(
@@ -59,6 +67,13 @@ dcp::dcp(vp::ComponentConf &config)
                   std::placeholders::_1, std::placeholders::_2,
                   std::placeholders::_3, std::placeholders::_4),
         true);
+}
+
+void dcp::start()
+{
+    // Fixed, always-on background model; no gating or voltage controller.
+    this->background_power.leakage_power_start();
+    this->background_power.dynamic_power_start();
 }
 
 vp::IoReqStatus dcp::handle_req(vp::Block *__this, vp::IoReq *req)
@@ -163,6 +178,7 @@ void dcp::handle_control_access(uint64_t reg_offset, int size,
 void dcp::handle_compute_event(vp::Block *__this, vp::ClockEvent *event)
 {
     dcp *_this = static_cast<dcp *>(__this);
+    _this->mac_power.account_energy_quantum();
     _this->accumulator += _this->a[_this->index] * _this->b[_this->index];
     ++_this->index;
     _this->accumulator_signal.set(_this->accumulator);

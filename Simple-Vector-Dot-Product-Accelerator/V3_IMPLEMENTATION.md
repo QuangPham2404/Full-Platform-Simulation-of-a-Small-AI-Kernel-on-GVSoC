@@ -83,5 +83,6 @@ fixed assembly sequence exposing dependent and independent instruction timing.
   Its log is `/tmp/dpc-v3-edge.log`; temporary source is `/tmp/dpc-v3-edge.c`.
 - CPU overflow check: MAC(UINT32_MAX, 2, 3) returned 5.
 
-Power tracing/modeling and multicore features remain deferred. This is a
+Power tracing/modeling is implemented in [V3_POWER.md](V3_POWER.md); multicore
+features remain deferred. This is a
 functional clock/timing comparison, not a pipeline-throughput benchmark.
