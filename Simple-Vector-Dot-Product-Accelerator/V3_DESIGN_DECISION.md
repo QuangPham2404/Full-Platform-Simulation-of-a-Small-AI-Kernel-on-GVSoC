@@ -45,3 +45,20 @@ Implement the agreed V3.1–V3.2 improvements to the existing mini dot-product a
 Success means: **build → simulate with traces → confirm matching CPU/DPC results and visible MAC progress**. Use the current vectors (`A = 1..16`, `B = all ones`) as a baseline; expected result is **136**. Check that the DPC accumulator progresses `1, 3, 6, ... , 136` rather than jumping only at completion. Check the custom CPU instruction executes and its timing/dependency behavior is observable. Retain or adjust existing build commands as appropriate to the actual local checkout.
 
 Avoid unnecessary refactors, extra components, broad rewrites, or overengineered test infrastructure. If an assumption about the local ISS/API proves incorrect, make the smallest suitable adaptation and explain it in the final report. After successful validation, sync the project files back, commit, and push; report tests run, trace evidence, affected ISS files, and any limitations. If validation fails, report the blocker and do **not** push an unverified implementation as complete.
+
+
+## V3.3 — Power modeling and tracing (Tutorial 14)
+
+This is the **next, separate implementation phase** after the validated V3.1–V3.2 MAC/ISS work. Retain the existing computation, timing, MMIO, and accumulator traces. Keep the power implementation surgical and consistent with the local GVSoC power APIs.
+
+**Goal:** Report static (leakage), dynamic, and total estimated power for the CPU and DPC separately, plus their combined CPU+DPC totals:
+
+- CPU: `P_static`, `P_dynamic`, `P_total = P_static + P_dynamic`.
+- DPC: `P_static`, `P_dynamic`, `P_total = P_static + P_dynamic`.
+- Combined CPU+DPC: sum the two components' static, dynamic, and total power. Do not call this full-SoC power unless all other relevant components (e.g., RAM/interconnect) are included in the model.
+
+Use a **fixed voltage and temperature** and clearly labeled illustrative power parameters, not claims of measured silicon power. For the DPC, model leakage/background power and dynamic energy associated with each of the 16 MAC events. For the CPU, first inspect the existing GVSoC CPU power facilities and configure an available, defensible model if supported. Do not invent a detailed CPU model or report unsupported numbers as genuine CPU estimates; state any limitation explicitly. Reuse GVSoC's native power reporting, aggregation, and VCD tracing where possible.
+
+**Validation:** Enable power simulation and traces (Tutorial 14 uses `--power --vcd --event=.*`, adapting to the local build). Confirm CPU/DPC arithmetic still returns 136, DPC MAC power activity corresponds to the 16 compute steps, and reports/traces provide meaningful static/dynamic/total figures for supported components. Check that combined figures agree with the CPU+DPC component sums. Avoid additional controllers, voltage/frequency scaling, power gating, multicore, or unrelated refactoring.
+
+**Workflow:** As before, first synchronize only project-owned files from the source-of-truth project to the GVSoC working project, activate `/home/stvn/UREKA/gvsoc/.venv/bin/activate`, implement and test in the GVSoC checkout, then synchronize verified project-owned changes back. Document any GVSoC-local changes, and commit/push the source-of-truth repository only after successful build, simulation, and trace validation.
