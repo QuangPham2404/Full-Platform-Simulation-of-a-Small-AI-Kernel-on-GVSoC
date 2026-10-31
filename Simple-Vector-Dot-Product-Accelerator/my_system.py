@@ -44,6 +44,25 @@ class Rv64(gvsoc.systree.Component):
         dpc_clock.o_CLOCK(soc.i_DPC_CLOCK())
 
 
+class MacRiscv(cpu.iss.riscv.RiscvCommon):
+    def __init__(self, parent, name, binaries):
+        isa = cpu.iss.isa_gen.isa_riscv_gen.RiscvIsa(
+            "rv64imafdc", "rv64imafdc", inc_supervisor=True, inc_user=True)
+        for insn in isa.get_insns():
+            if insn.label == "mac":
+                insn.get_out_reg(0).set_latency(2)
+                # This checkout's stalled handler timestamps latency + 1.
+                # Output metadata alone installs the handler but leaves its
+                # instruction latency at zero: one extra cycle gives 2 total.
+                insn.set_latency(1)
+        super().__init__(
+            parent, name, isa=isa, misa=isa.misa, binaries=binaries,
+            riscv_exceptions=True, riscv_dbg_unit=True, mmu=True, pmp=True,
+            internal_atomics=True, supervisor=True, user=True,
+            timed=True, prefetcher_size=64, scoreboard=True)
+        self.add_c_flags(["-DCONFIG_ISS_CORE=riscv"])
+
+
 class Soc(gvsoc.systree.Component):
     def i_CPU_CLOCK(self) -> gvsoc.systree.SlaveItf:
         return gvsoc.systree.SlaveItf(
@@ -58,9 +77,7 @@ class Soc(gvsoc.systree.Component):
     def __init__(self, parent, name, binary):
         super().__init__(parent, name)
 
-        host = cpu.iss.riscv.Riscv(
-            self, "cpu", isa="rv64imafdc", binaries=[binary]
-        )
+        host = MacRiscv(self, "cpu", binaries=[binary])
         ico = interco.router.Router(self, "ico")
         mem = memory.memory.Memory(self, "mem", size=0x00100000)
         loader = utils.loader.loader.ElfLoader(

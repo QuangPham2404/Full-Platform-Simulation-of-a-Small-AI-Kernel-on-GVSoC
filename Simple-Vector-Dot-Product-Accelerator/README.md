@@ -265,13 +265,14 @@ The following updates are made:
 - Add latency: computation latency (50s) and communication-ico latency (5s)
 - Add clk zones: cpu (100 MHz) and Dot Product Component (DPC - 50 MHz)
 
-## 5.2. Version 3 (Milestone Project 3) : IN PLANNING
+## 5.2. Version 3.1–3.2: validated
 
-- Sequential MAC engine, update timing and latency accordingly (with dependencies)
-- Add custom RISC-V instruction
-- Add multiple cores & accompanying components
-- Power modeling
-- 
+The current implementation uses 16 input words per vector and the existing
+MMIO register map. The 50 MHz DPC executes one wrapping 32-bit MAC per cycle;
+the 100 MHz RV64 CPU independently computes the same result with a custom
+`mac rd, rs1, rs2` instruction. Both return **136** for A=1..16, B=ones.
+MMIO requests retain their five requester-cycle latency.
 
-This step is the first transition of the current SoC into a simple mimic of the PULP architecture with the compute cluster component (multiple cores)
-
+See [V3_IMPLEMENTATION.md](V3_IMPLEMENTATION.md) for build commands, the
+required GVSoC ISS patch, timing semantics, and validation evidence.
+Power modeling remains deferred to V3.3. Multicore support is outside this change.

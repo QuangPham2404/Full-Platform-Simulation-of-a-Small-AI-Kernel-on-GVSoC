@@ -21,6 +21,10 @@ private:
     vp::Signal<uint32_t> state_signal; // 0=IDLE, 1=BUSY, 2=DONE
     vp::Signal<uint32_t> accumulator_signal;
     vp::ClockEvent compute_event;
+    uint32_t a[16], b[16]; // Snapshot: MMIO writes affect only the next job.
+    uint32_t accumulator = 0;
+    unsigned index = 0;
+    bool busy = false;
 
     static void handle_compute_event(vp::Block *__this, vp::ClockEvent *event);
 
@@ -98,68 +102,82 @@ void dcp::handle_control_access(uint64_t reg_offset, int size,
 
     // Only CONTROL == 1 starts a new one-shot operation.
     if (is_write && this->regmap.control.get() == 1
-        && !this->compute_event.is_enqueued())
+        && !this->busy)
     {
+        this->busy = true;
+        this->index = 0;
+        this->accumulator = 0;
+        const uint32_t inputs_a[16] = {
+            this->regmap.a0.get(),
+            this->regmap.a1.get(),
+            this->regmap.a2.get(),
+            this->regmap.a3.get(),
+            this->regmap.a4.get(),
+            this->regmap.a5.get(),
+            this->regmap.a6.get(),
+            this->regmap.a7.get(),
+            this->regmap.a8.get(),
+            this->regmap.a9.get(),
+            this->regmap.a10.get(),
+            this->regmap.a11.get(),
+            this->regmap.a12.get(),
+            this->regmap.a13.get(),
+            this->regmap.a14.get(),
+            this->regmap.a15.get()
+        };
+        const uint32_t inputs_b[16] = {
+            this->regmap.b0.get(),
+            this->regmap.b1.get(),
+            this->regmap.b2.get(),
+            this->regmap.b3.get(),
+            this->regmap.b4.get(),
+            this->regmap.b5.get(),
+            this->regmap.b6.get(),
+            this->regmap.b7.get(),
+            this->regmap.b8.get(),
+            this->regmap.b9.get(),
+            this->regmap.b10.get(),
+            this->regmap.b11.get(),
+            this->regmap.b12.get(),
+            this->regmap.b13.get(),
+            this->regmap.b14.get(),
+            this->regmap.b15.get()
+        };
+        for (unsigned i = 0; i < 16; ++i)
+        {
+            this->a[i] = inputs_a[i];
+            this->b[i] = inputs_b[i];
+        }
         this->regmap.status.set(0);
         this->regmap.result.set(0);
         this->state_signal.set(1); // BUSY
         this->accumulator_signal.set(0);
         this->trace.msg(vp::TraceLevel::DEBUG,
-                        "DPC BUSY: computation scheduled for +50 DPC cycles\n");
+                        "DPC BUSY: computation scheduled for one MAC per DPC cycle\n");
         printf("[DPC] Values received!\n");
-        this->compute_event.enqueue(50);
+        this->compute_event.enqueue(1);
     }
 }
 
-// After 50 cycles, compute the *whole* dot product in one shot.
-// This is deliberately not a sequential MAC microarchitecture.
+// Each event performs exactly one 32-bit wrapping MAC.
 void dcp::handle_compute_event(vp::Block *__this, vp::ClockEvent *event)
 {
     dcp *_this = static_cast<dcp *>(__this);
-    const uint32_t a[16] = {
-        _this->regmap.a0.get(),
-        _this->regmap.a1.get(),
-        _this->regmap.a2.get(),
-        _this->regmap.a3.get(),
-        _this->regmap.a4.get(),
-        _this->regmap.a5.get(),
-        _this->regmap.a6.get(),
-        _this->regmap.a7.get(),
-        _this->regmap.a8.get(),
-        _this->regmap.a9.get(),
-        _this->regmap.a10.get(),
-        _this->regmap.a11.get(),
-        _this->regmap.a12.get(),
-        _this->regmap.a13.get(),
-        _this->regmap.a14.get(),
-        _this->regmap.a15.get()
-    };
-    const uint32_t b[16] = {
-        _this->regmap.b0.get(),
-        _this->regmap.b1.get(),
-        _this->regmap.b2.get(),
-        _this->regmap.b3.get(),
-        _this->regmap.b4.get(),
-        _this->regmap.b5.get(),
-        _this->regmap.b6.get(),
-        _this->regmap.b7.get(),
-        _this->regmap.b8.get(),
-        _this->regmap.b9.get(),
-        _this->regmap.b10.get(),
-        _this->regmap.b11.get(),
-        _this->regmap.b12.get(),
-        _this->regmap.b13.get(),
-        _this->regmap.b14.get(),
-        _this->regmap.b15.get()
-    };
-
-    uint32_t result = 0;
-    for (int i = 0; i < 16; i++)
-        result += a[i] * b[i];
-
+    _this->accumulator += _this->a[_this->index] * _this->b[_this->index];
+    ++_this->index;
+    _this->accumulator_signal.set(_this->accumulator);
+    _this->trace.msg(vp::TraceLevel::DEBUG,
+                     "DPC MAC: step=%u accumulator=%u\n",
+                     _this->index, _this->accumulator);
+    if (_this->index < 16)
+    {
+        event->enqueue(1);
+        return;
+    }
+    _this->busy = false;
+    const uint32_t result = _this->accumulator;
     _this->regmap.result.set(result);
     _this->regmap.status.set(1);
-    _this->accumulator_signal.set(result);
     _this->state_signal.set(2); // DONE
     _this->trace.msg(vp::TraceLevel::DEBUG,
                      "DPC DONE: accumulator=%u\n", result);

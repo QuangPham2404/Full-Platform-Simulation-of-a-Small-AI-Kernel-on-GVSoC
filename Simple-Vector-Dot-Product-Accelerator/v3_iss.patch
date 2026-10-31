@@ -1,0 +1,33 @@
+diff --git a/models/cpu/iss/include/isa/rv64i.hpp b/models/cpu/iss/include/isa/rv64i.hpp
+index 3cf0cd14..571a08af 100644
+--- a/models/cpu/iss/include/isa/rv64i.hpp
++++ b/models/cpu/iss/include/isa/rv64i.hpp
+@@ -143,3 +143,12 @@ static inline iss_reg_t sraw_exec(Iss *iss, iss_insn_t *insn, iss_reg_t pc)
+     REG_SET(0, LIB_CALL2(lib_SRAW, REG_GET(0), REG_GET(1) & ((1 << 5) - 1)));
+     return iss_insn_next(iss, insn, pc);
+ }
++
++// Custom-0 MAC, modulo 2^32; zero-extend the result in the RV64 register.
++static inline iss_reg_t mac_exec(Iss *iss, iss_insn_t *insn, iss_reg_t pc)
++{
++    const uint32_t result = (uint32_t)REG_GET(2)
++        + (uint32_t)REG_GET(0) * (uint32_t)REG_GET(1);
++    REG_SET(0, (iss_reg_t)result);
++    return iss_insn_next(iss, insn, pc);
++}
+diff --git a/models/cpu/iss/isa_gen/isa_riscv_gen.py b/models/cpu/iss/isa_gen/isa_riscv_gen.py
+index 6a987c66..6dcc6595 100644
+--- a/models/cpu/iss/isa_gen/isa_riscv_gen.py
++++ b/models/cpu/iss/isa_gen/isa_riscv_gen.py
+@@ -570,6 +570,11 @@ class Rv64i(IsaSubset):
+ 
+     def __init__(self):
+         super().__init__(name='rv64i', instrs=[
++            # Educational custom-0 MAC: rd is also the third source operand.
++            Instr('mac', [OutReg(0, Range(7, 5)),
++                          InReg(0, Range(15, 5)), InReg(1, Range(20, 5)),
++                          InReg(2, Range(7, 5), dumpName=False)],
++                  '0000000 ----- ----- 000 ----- 0001011'),
+             Instr('lwu',   Format_L,    '------- ----- ----- 110 ----- 0000011', fast_handler=True, tags=["load"]),
+             Instr('ld',    Format_L,    '------- ----- ----- 011 ----- 0000011', fast_handler=True, tags=["load"]),
+             Instr('sd',    Format_S,    '------- ----- ----- 011 ----- 0100011', fast_handler=True, tags=["store"]),
